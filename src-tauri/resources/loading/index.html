@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tako</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0b;
+            color: #e4e4e7;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: #fafafa;
+        }
+
+        .steps {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background: #18181b;
+            border: 1px solid #27272a;
+            transition: all 0.3s ease;
+        }
+
+        .step.running {
+            border-color: #3b82f6;
+            background: #1e293b;
+        }
+
+        .step.done {
+            border-color: #22c55e;
+        }
+
+        .step.error {
+            border-color: #ef4444;
+        }
+
+        .step-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-icon .pending {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: #52525b;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .step-icon .spinner {
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #3b82f640;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .step-icon .check {
+            color: #22c55e;
+            font-size: 1rem;
+        }
+
+        .step-icon .cross {
+            color: #ef4444;
+            font-size: 1rem;
+        }
+
+        .step-label {
+            font-size: 0.875rem;
+            color: #a1a1aa;
+        }
+
+        .step.running .step-label,
+        .step.done .step-label {
+            color: #e4e4e7;
+        }
+
+        .step-message {
+            font-size: 0.75rem;
+            color: #71717a;
+            margin-top: 0.25rem;
+        }
+
+        .step.running .step-message {
+            color: #93c5fd;
+        }
+
+        .step.error .step-message {
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🐙</div>
+        <h1>Setting up...</h1>
+        <div class="steps">
+            <div class="step" id="step-bun">
+                <div class="step-icon"><div class="pending"></div></div>
+                <div>
+                    <div class="step-label">Bun Runtime</div>
+                    <div class="step-message">Waiting...</div>
+                </div>
+            </div>
+            <div class="step" id="step-hub">
+                <div class="step-icon"><div class="pending"></div></div>
+                <div>
+                    <div class="step-label">Hub Server</div>
+                    <div class="step-message">Waiting...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Listen for Tauri setup-progress events
+        // The Tauri JS API is injected by the webview
+        if (window.__TAURI__) {
+            const { listen } = window.__TAURI__.event;
+
+            listen('setup-progress', (event) => {
+                const { step, status, message } = event.payload;
+                updateStep(step, status, message);
+            });
+        }
+
+        function updateStep(stepId, status, message) {
+            const el = document.getElementById('step-' + stepId);
+            if (!el) return;
+
+            // Update class
+            el.className = 'step ' + status;
+
+            // Update icon
+            const iconEl = el.querySelector('.step-icon');
+            if (status === 'running') {
+                iconEl.innerHTML = '<div class="spinner"></div>';
+            } else if (status === 'done') {
+                iconEl.innerHTML = '<span class="check">&#10003;</span>';
+            } else if (status === 'error') {
+                iconEl.innerHTML = '<span class="cross">&#10007;</span>';
+            }
+
+            // Update message
+            const msgEl = el.querySelector('.step-message');
+            if (msgEl && message) {
+                msgEl.textContent = message;
+            }
+
+            // Update title on error
+            if (status === 'error') {
+                const h1 = document.querySelector('h1');
+                if (h1) h1.textContent = 'Setup failed';
+            }
+        }
+    </script>
+</body>
+</html>

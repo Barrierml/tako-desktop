@@ -1,0 +1,27 @@
+[package]
+name = "tako-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Tako Desktop — AI coding tools launcher"
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+dirs = "6"
+zip = "2"
+url = "2"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[lib]
+name = "tako_desktop_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
