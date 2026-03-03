@@ -1,7 +1,7 @@
 {
     "name": "tako-desktop-app",
     "private": true,
-    "version": "0.3.1",
+    "version": "0.3.2",
     "scripts": {
         "prepare": "bun run scripts/prepare-resources.ts",
         "dev": "bun run prepare && cargo tauri dev",
