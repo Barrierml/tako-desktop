@@ -64,29 +64,44 @@ async function prepareMonorepo() {
 async function prepareStandalone() {
     console.log('[prepare] Standalone mode — downloading bundles from npm...')
 
-    // Install the bundles package temporarily
-    await $`bun add ${BUNDLES_PKG} --no-save`.cwd(DESKTOP_DIR)
+    // Fetch tarball URL from npm registry (avoids `bun add` which triggers prepare recursion)
+    const metaRes = await fetch(`https://registry.npmjs.org/${BUNDLES_PKG}/latest`)
+    if (!metaRes.ok) throw new Error(`Failed to fetch package metadata: ${metaRes.status}`)
+    const meta = await metaRes.json() as { version: string; dist: { tarball: string } }
+    console.log(`[prepare] Found ${BUNDLES_PKG}@${meta.version}`)
 
-    const bundlesDir = join(DESKTOP_DIR, 'node_modules', BUNDLES_PKG)
-    await access(bundlesDir) // throws if missing
+    // Download and extract tarball
+    const tmpDir = join(DESKTOP_DIR, '.bundles-tmp')
+    await rm(tmpDir, { recursive: true, force: true })
+    await mkdir(tmpDir, { recursive: true })
+
+    console.log(`[prepare] Downloading tarball...`)
+    const tarballRes = await fetch(meta.dist.tarball)
+    if (!tarballRes.ok) throw new Error(`Failed to download tarball: ${tarballRes.status}`)
+    const tarballPath = join(tmpDir, 'bundle.tgz')
+    await Bun.write(tarballPath, tarballRes)
+
+    // Extract (npm tarballs have a `package/` prefix)
+    await $`tar xzf ${tarballPath} -C ${tmpDir}`.quiet()
+    const extractedDir = join(tmpDir, 'package')
 
     // Copy each artifact
     const files = ['hub-bundle.js', 'cli-bundle.js', 'catalog.json']
     for (const file of files) {
-        const src = join(bundlesDir, file)
+        const src = join(extractedDir, file)
         console.log(`[prepare] Copying ${file}...`)
         await cp(src, join(RESOURCES, file))
     }
 
     // Copy web-dist directory
     console.log('[prepare] Copying web-dist/...')
-    const webDistSrc = join(bundlesDir, 'web-dist')
+    const webDistSrc = join(extractedDir, 'web-dist')
     await mkdir(join(RESOURCES, 'web-dist'), { recursive: true })
     await cp(webDistSrc, join(RESOURCES, 'web-dist'), { recursive: true })
 
     // Clean up
-    console.log('[prepare] Cleaning up temporary package...')
-    await rm(join(DESKTOP_DIR, 'node_modules', BUNDLES_PKG), { recursive: true, force: true })
+    console.log('[prepare] Cleaning up...')
+    await rm(tmpDir, { recursive: true, force: true })
 }
 
 async function main() {
