@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" fill="#F06858"/>
+
+  <!-- Tentacles (short, stubby, cute) -->
+  <rect x="295" y="570" width="56" height="180" rx="28" fill="#FFBCB5"/>
+  <rect x="381" y="570" width="56" height="210" rx="28" fill="#FFBCB5"/>
+  <rect x="484" y="570" width="56" height="230" rx="28" fill="#FFBCB5"/>
+  <rect x="587" y="570" width="56" height="210" rx="28" fill="#FFBCB5"/>
+  <rect x="673" y="570" width="56" height="180" rx="28" fill="#FFBCB5"/>
+
+  <!-- Head (big round, kawaii) -->
+  <ellipse cx="512" cy="400" rx="260" ry="240" fill="#FFBCB5"/>
+
+  <!-- Left eye -->
+  <ellipse cx="420" cy="410" rx="50" ry="54" fill="white"/>
+  <ellipse cx="430" cy="420" rx="28" ry="30" fill="#2D3436"/>
+  <circle cx="416" cy="400" r="12" fill="white"/>
+
+  <!-- Right eye -->
+  <ellipse cx="604" cy="410" rx="50" ry="54" fill="white"/>
+  <ellipse cx="614" cy="420" rx="28" ry="30" fill="#2D3436"/>
+  <circle cx="600" cy="400" r="12" fill="white"/>
+
+  <!-- Smile -->
+  <path d="M 470 480 Q 512 516 554 480" stroke="#E07060" stroke-width="10" fill="none" stroke-linecap="round"/>
+
+  <!-- Cheeks -->
+  <ellipse cx="348" cy="460" rx="34" ry="22" fill="#F09088" opacity="0.6"/>
+  <ellipse cx="676" cy="460" rx="34" ry="22" fill="#F09088" opacity="0.6"/>
+</svg>
