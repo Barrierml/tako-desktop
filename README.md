@@ -13,7 +13,22 @@ Download the latest `.dmg` from [**Releases**](https://github.com/Barrierml/tako
 | Apple Silicon (M1/M2/M3/M4) | `Tako_*_aarch64.dmg` |
 | Intel | `Tako_*_x64.dmg` |
 
-Open the `.dmg`, drag **Tako** to Applications, and launch.
+### macOS Security Notice
+
+⚠️ **The app is currently unsigned and will be blocked by macOS Gatekeeper.**
+
+After downloading, run this command to remove the quarantine flag:
+
+```bash
+# Remove quarantine from the .dmg file
+xattr -d com.apple.quarantine ~/Downloads/Tako_*.dmg
+
+# Then open the .dmg and drag Tako to Applications
+# If still blocked, run:
+sudo xattr -cr /Applications/Tako.app
+```
+
+**Why?** Code signing requires an Apple Developer account ($99/year). We're working on getting the app signed and notarized.
 
 ## Build from Source
 
