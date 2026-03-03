@@ -5,43 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tako</title>
     <style>
+        /* Design tokens — mirrors WebUI's CSS variables exactly */
+        :root {
+            --app-bg: #ffffff;
+            --app-fg: #111827;
+            --app-hint: #6b7280;
+            --app-secondary-bg: #f3f4f6;
+            --app-border: rgba(0, 0, 0, 0.08);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --app-bg: #1c1c1e;
+                --app-fg: #ffffff;
+                --app-hint: #8e8e93;
+                --app-secondary-bg: #2C2C2E;
+                --app-border: rgba(255, 255, 255, 0.08);
+            }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0b;
-            color: #e4e4e7;
+            background: var(--app-bg);
+            color: var(--app-fg);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             -webkit-user-select: none;
             user-select: none;
+            overflow: hidden;
         }
 
         .container {
+            width: 100%;
+            max-width: 22rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .header {
             text-align: center;
-            max-width: 400px;
-            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .logo {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
+            width: 72px;
+            height: 72px;
+            margin-bottom: 0.25rem;
+            border-radius: 18px;
+            animation: breathe 2.4s ease-in-out infinite;
         }
 
-        h1 {
-            font-size: 1.5rem;
+        @keyframes breathe {
+            0%, 100% { transform: scale(1);     opacity: 1;    }
+            50%       { transform: scale(1.055); opacity: 0.85; }
+        }
+
+        .title {
+            font-size: 1.125rem;
             font-weight: 600;
-            margin-bottom: 2rem;
-            color: #fafafa;
+            color: var(--app-fg);
+            letter-spacing: -0.01em;
         }
 
+        .subtitle {
+            font-size: 0.8125rem;
+            color: var(--app-hint);
+        }
+
+        /* Steps */
         .steps {
-            text-align: left;
+            width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .step {
@@ -49,23 +102,13 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            background: #18181b;
-            border: 1px solid #27272a;
-            transition: all 0.3s ease;
-        }
-
-        .step.running {
-            border-color: #3b82f6;
-            background: #1e293b;
+            border-radius: 0.625rem;
+            background: var(--app-secondary-bg);
+            transition: background 0.25s ease, opacity 0.25s ease;
         }
 
         .step.done {
-            border-color: #22c55e;
-        }
-
-        .step.error {
-            border-color: #ef4444;
+            opacity: 0.6;
         }
 
         .step-icon {
@@ -75,78 +118,116 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            color: var(--app-hint);
         }
 
-        .step-icon .pending {
-            width: 0.5rem;
-            height: 0.5rem;
+        /* Pending: empty circle */
+        .icon-pending {
+            width: 1.1rem;
+            height: 1.1rem;
             border-radius: 50%;
-            background: #52525b;
+            border: 1.5px solid var(--app-border);
         }
 
+        /* SVG Spinner — matches WebUI Spinner component */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        .step-icon .spinner {
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid #3b82f640;
-            border-top-color: #3b82f6;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .icon-spinner {
+            animation: spin 0.9s linear infinite;
+            color: var(--app-hint);
         }
 
-        .step-icon .check {
-            color: #22c55e;
-            font-size: 1rem;
-        }
+        /* Done: green check */
+        .icon-check { color: #22c55e; }
 
-        .step-icon .cross {
-            color: #ef4444;
-            font-size: 1rem;
+        /* Error: red X */
+        .icon-error { color: #ef4444; }
+
+        .step-body {
+            flex: 1;
+            min-width: 0;
         }
 
         .step-label {
             font-size: 0.875rem;
-            color: #a1a1aa;
+            font-weight: 500;
+            color: var(--app-fg);
         }
 
-        .step.running .step-label,
-        .step.done .step-label {
-            color: #e4e4e7;
+        .step.pending .step-label {
+            color: var(--app-hint);
+            font-weight: 400;
         }
 
         .step-message {
             font-size: 0.75rem;
-            color: #71717a;
-            margin-top: 0.25rem;
-        }
-
-        .step.running .step-message {
-            color: #93c5fd;
+            color: var(--app-hint);
+            margin-top: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .step.error .step-message {
-            color: #fca5a5;
+            color: #ef4444;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 1.25rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.6875rem;
+            color: var(--app-hint);
+            opacity: 0.6;
+            line-height: 1.6;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">🐙</div>
-        <h1>Setting up...</h1>
-        <div class="steps">
-            <div class="step" id="step-bun">
-                <div class="step-icon"><div class="pending"></div></div>
-                <div>
+        <div class="header">
+            <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Tako">
+                <rect width="1024" height="1024" rx="220" fill="#F06858"/>
+                <rect x="295" y="570" width="56" height="180" rx="28" fill="#FFBCB5"/>
+                <rect x="381" y="570" width="56" height="210" rx="28" fill="#FFBCB5"/>
+                <rect x="484" y="570" width="56" height="230" rx="28" fill="#FFBCB5"/>
+                <rect x="587" y="570" width="56" height="210" rx="28" fill="#FFBCB5"/>
+                <rect x="673" y="570" width="56" height="180" rx="28" fill="#FFBCB5"/>
+                <ellipse cx="512" cy="400" rx="260" ry="240" fill="#FFBCB5"/>
+                <ellipse cx="420" cy="410" rx="50" ry="54" fill="white"/>
+                <ellipse cx="430" cy="420" rx="28" ry="30" fill="#2D3436"/>
+                <circle cx="416" cy="400" r="12" fill="white"/>
+                <ellipse cx="604" cy="410" rx="50" ry="54" fill="white"/>
+                <ellipse cx="614" cy="420" rx="28" ry="30" fill="#2D3436"/>
+                <circle cx="600" cy="400" r="12" fill="white"/>
+                <path d="M 470 480 Q 512 516 554 480" stroke="#E07060" stroke-width="10" fill="none" stroke-linecap="round"/>
+                <ellipse cx="348" cy="460" rx="34" ry="22" fill="#F09088" opacity="0.6"/>
+                <ellipse cx="676" cy="460" rx="34" ry="22" fill="#F09088" opacity="0.6"/>
+            </svg>
+            <div class="title" id="main-title">Starting up...</div>
+            <div class="subtitle" id="main-subtitle">Preparing your workspace</div>
+        </div>
+
+        <div class="steps" id="steps">
+            <div class="step pending" id="step-bun">
+                <div class="step-icon">
+                    <div class="icon-pending"></div>
+                </div>
+                <div class="step-body">
                     <div class="step-label">Bun Runtime</div>
                     <div class="step-message">Waiting...</div>
                 </div>
             </div>
-            <div class="step" id="step-hub">
-                <div class="step-icon"><div class="pending"></div></div>
-                <div>
+            <div class="step pending" id="step-hub">
+                <div class="step-icon">
+                    <div class="icon-pending"></div>
+                </div>
+                <div class="step-body">
                     <div class="step-label">Hub Server</div>
                     <div class="step-message">Waiting...</div>
                 </div>
@@ -154,46 +235,73 @@
         </div>
     </div>
 
-    <script>
-        // Listen for Tauri setup-progress events
-        // The Tauri JS API is injected by the webview
-        if (window.__TAURI__) {
-            const { listen } = window.__TAURI__.event;
+    <div class="footer">
+        Made with &#9829; for developers &nbsp;·&nbsp; &copy; <span id="year"></span> Tako
+    </div>
 
-            listen('setup-progress', (event) => {
-                const { step, status, message } = event.payload;
-                updateStep(step, status, message);
-            });
-        }
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        const SVG_SPINNER = `<svg class="icon-spinner" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+            <path d="M17.5 10a7.5 7.5 0 00-7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>`;
+
+        const SVG_CHECK = `<svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 10.5l4.5 4.5 7.5-8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+
+        const SVG_ERROR = `<svg class="icon-error" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>`;
 
         function updateStep(stepId, status, message) {
             const el = document.getElementById('step-' + stepId);
             if (!el) return;
 
-            // Update class
             el.className = 'step ' + status;
 
-            // Update icon
             const iconEl = el.querySelector('.step-icon');
-            if (status === 'running') {
-                iconEl.innerHTML = '<div class="spinner"></div>';
-            } else if (status === 'done') {
-                iconEl.innerHTML = '<span class="check">&#10003;</span>';
-            } else if (status === 'error') {
-                iconEl.innerHTML = '<span class="cross">&#10007;</span>';
+            switch (status) {
+                case 'running':
+                    iconEl.innerHTML = SVG_SPINNER;
+                    break;
+                case 'done':
+                    iconEl.innerHTML = SVG_CHECK;
+                    break;
+                case 'error':
+                    iconEl.innerHTML = SVG_ERROR;
+                    break;
+                default:
+                    iconEl.innerHTML = '<div class="icon-pending"></div>';
             }
 
-            // Update message
-            const msgEl = el.querySelector('.step-message');
-            if (msgEl && message) {
-                msgEl.textContent = message;
+            if (message) {
+                el.querySelector('.step-message').textContent = message;
             }
 
-            // Update title on error
             if (status === 'error') {
-                const h1 = document.querySelector('h1');
-                if (h1) h1.textContent = 'Setup failed';
+                document.getElementById('main-title').textContent = 'Setup failed';
+                document.getElementById('main-subtitle').textContent = 'Something went wrong during startup';
             }
+        }
+
+        if (window.__TAURI__) {
+            // Register listener FIRST, then signal Rust we're ready.
+            // Rust waits for this signal before emitting setup-progress events,
+            // so no events are lost due to WebView load timing.
+            window.__TAURI__.event.listen('setup-progress', (event) => {
+                const { step, status, message } = event.payload;
+                updateStep(step, status, message);
+            }).then(() => {
+                window.__TAURI__.event.emit('frontend-ready', {});
+            });
+        } else {
+            // Dev preview: simulate steps
+            setTimeout(() => updateStep('bun', 'running', 'Checking Bun runtime...'), 300);
+            setTimeout(() => updateStep('bun', 'done', 'Bun runtime ready'), 1200);
+            setTimeout(() => updateStep('hub', 'running', 'Starting Hub server...'), 1400);
+            setTimeout(() => updateStep('hub', 'done', 'Hub server ready'), 2000);
         }
     </script>
 </body>

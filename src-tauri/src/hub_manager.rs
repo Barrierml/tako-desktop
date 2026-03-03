@@ -7,11 +7,62 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tauri::Emitter;
 
-/// The port Hub listens on in desktop mode.
-pub const HUB_PORT: u16 = 3006;
+/// The port Hub listens on in desktop mode (separate from CLI's default 19836).
+pub const HUB_PORT: u16 = 19837;
+
+/// Kill any existing process listening on the Hub port.
+/// Prevents "port already in use" errors from stale processes.
+fn kill_existing_on_port(port: u16) {
+    #[cfg(unix)]
+    {
+        // lsof -ti :PORT returns PIDs of processes using the port
+        let output = std::process::Command::new("lsof")
+            .args(["-ti", &format!(":{}", port)])
+            .output();
+
+        if let Ok(output) = output {
+            let pids = String::from_utf8_lossy(&output.stdout);
+            for line in pids.trim().lines() {
+                if let Ok(pid) = line.trim().parse::<i32>() {
+                    eprintln!("[Tako] Killing stale process {} on port {}", pid, port);
+                    unsafe {
+                        libc::kill(pid, libc::SIGTERM);
+                    }
+                }
+            }
+            // Brief wait for processes to release the port
+            if !pids.trim().is_empty() {
+                std::thread::sleep(Duration::from_millis(500));
+            }
+        }
+    }
+
+    #[cfg(not(unix))]
+    {
+        // Windows: netstat + taskkill
+        let output = std::process::Command::new("cmd")
+            .args(["/C", &format!("netstat -ano | findstr :{}", port)])
+            .output();
+
+        if let Ok(output) = output {
+            let text = String::from_utf8_lossy(&output.stdout);
+            for line in text.lines() {
+                if let Some(pid_str) = line.split_whitespace().last() {
+                    if let Ok(_pid) = pid_str.parse::<u32>() {
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/F", "/PID", pid_str])
+                            .output();
+                    }
+                }
+            }
+            if !text.trim().is_empty() {
+                std::thread::sleep(Duration::from_millis(500));
+            }
+        }
+    }
+}
 
 /// Start the Hub server process using Bun.
-/// Returns the Child process handle directly (no longer wrapped in HubState).
 pub async fn start_hub(
     app: &AppHandle,
     hub_bundle: &PathBuf,
@@ -25,12 +76,21 @@ pub async fn start_hub(
         return Err("Bun is not installed".to_string());
     }
 
+    // Kill any stale process on the port before starting
+    kill_existing_on_port(HUB_PORT);
+
     emit_progress(app, "hub", "running", "Starting Hub server...");
+
+    // Resolve Desktop-specific DB path: ~/.tako/desktop.db
+    let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
+    let desktop_db = home.join(".tako").join("desktop.db");
 
     let mut cmd = std::process::Command::new(&bun);
     cmd.arg(hub_bundle)
         .env("TAKO_WEB_DIST", web_dist)
         .env("TAKO_LISTEN_PORT", HUB_PORT.to_string())
+        .env("DB_PATH", &desktop_db)
+        .env("TAKO_HUB_LOG_NAME", "desktop-hub.log")
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit());
 
@@ -47,6 +107,14 @@ pub async fn start_hub(
     // Pass desktop bundle version for update comparisons
     if let Some(ver) = desktop_version {
         cmd.env("TAKO_DESKTOP_VERSION", ver);
+    }
+
+    // Spawn Hub in its own process group so that killing the group on app quit
+    // also terminates all Hub's children (autoRunner, Claude Code, etc.).
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
     }
 
     let child = cmd
@@ -109,14 +177,16 @@ pub async fn wait_for_exit(child: &mut Child, shutdown_flag: &Arc<AtomicBool>) -
     }
 }
 
-/// Force-kill a child process.
+/// Kill the Hub process and all its children (same process group).
 pub fn kill_child(child: &mut Child) {
     let pid = child.id();
 
     #[cfg(unix)]
     {
+        // Hub was spawned with process_group(0), so its PGID == its PID.
+        // killpg terminates the entire group: Hub + autoRunner + Claude Code, etc.
         unsafe {
-            libc::kill(pid as i32, libc::SIGTERM);
+            libc::killpg(pid as i32, libc::SIGTERM);
         }
     }
     #[cfg(not(unix))]
@@ -124,7 +194,7 @@ pub fn kill_child(child: &mut Child) {
         let _ = child.kill();
     }
 
-    // Wait up to 5 seconds for graceful exit
+    // Wait up to 5 seconds for graceful exit, then force-kill
     let start = std::time::Instant::now();
     loop {
         match child.try_wait() {
@@ -133,6 +203,11 @@ pub fn kill_child(child: &mut Child) {
                 std::thread::sleep(Duration::from_millis(100));
             }
             _ => {
+                #[cfg(unix)]
+                unsafe {
+                    libc::killpg(pid as i32, libc::SIGKILL);
+                }
+                #[cfg(not(unix))]
                 let _ = child.kill();
                 let _ = child.wait();
                 break;

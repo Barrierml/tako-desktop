@@ -1,6 +1,6 @@
 {
     "productName": "Tako",
-    "version": "0.1.0",
+    "version": "0.3.0",
     "identifier": "tech.shiroha.tako",
     "build": {
         "beforeBuildCommand": "bun run prepare",
@@ -8,15 +8,6 @@
         "frontendDist": "./resources/loading"
     },
     "app": {
-        "windows": [
-            {
-                "title": "Tako",
-                "width": 1280,
-                "height": 800,
-                "resizable": true,
-                "fullscreen": false
-            }
-        ],
         "security": {
             "csp": null
         }

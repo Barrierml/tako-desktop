@@ -1,17 +1,2 @@
-# Dependencies
-node_modules/
-
-# Rust build
+# Tauri build output
 src-tauri/target/
-
-# Bun
-bun.lockb
-
-# macOS
-.DS_Store
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo

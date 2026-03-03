@@ -1,11 +1,13 @@
 {
     "name": "tako-desktop-app",
     "private": true,
-    "version": "0.1.0",
+    "version": "0.3.0",
     "scripts": {
         "prepare": "bun run scripts/prepare-resources.ts",
         "dev": "bun run prepare && cargo tauri dev",
-        "build": "bun run prepare && cargo tauri build",
-        "build:release": "bun run prepare && cargo tauri build"
+        "clean:dmg": "rm -f src-tauri/target/release/bundle/macos/*.dmg src-tauri/target/release/bundle/dmg/Tako_*.dmg",
+        "build": "bun run prepare && bun run clean:dmg && cargo tauri build",
+        "build:release": "bun run prepare && bun run clean:dmg && cargo tauri build",
+        "build:test": "bun run build && TAKO_DEV_BUNDLES=1 open src-tauri/target/release/bundle/macos/Tako.app"
     }
 }
